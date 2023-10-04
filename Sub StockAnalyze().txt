@@ -1,0 +1,108 @@
+Sub StockAnalyze()
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim ticker As String
+    Dim openingPrice As Double
+    Dim closingPrice As Double
+    Dim yearlyChange As Double
+    Dim percentChange As Double
+    Dim totalVolume As Double
+    Dim summaryTableRow As Integer
+
+    For Each ws In Worksheets
+       
+        lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+
+        summaryTableRow = 2
+        ws.Cells(1, 9).Value = "Ticker"
+        ws.Cells(1, 10).Value = "Yearly Change"
+        ws.Cells(1, 11).Value = "Percent Change"
+        ws.Cells(1, 12).Value = "Total Stock Volume"
+
+        For i = 2 To lastRow
+            
+            ticker = ws.Cells(i, 1).Value
+            openingPrice = ws.Cells(i, 3).Value
+            closingPrice = ws.Cells(i, 6).Value
+            totalVolume = ws.Cells(i, 7).Value
+
+            
+            yearlyChange = closingPrice - openingPrice
+            If openingPrice <> 0 Then
+                percentChange = (closingPrice - openingPrice) / openingPrice
+            Else
+                percentChange = 0
+            End If
+
+        
+            ws.Cells(i, 10).Value = yearlyChange
+            ws.Cells(i, 11).Value = percentChange
+            ws.Cells(i, 12).Value = totalVolume
+
+          
+            If yearlyChange >= 0 Then
+                ws.Cells(i, 10).Interior.Color = RGB(0, 255, 0) '
+            Else
+                ws.Cells(i, 10).Interior.Color = RGB(255, 0, 0) '
+            End If
+
+            ws.Cells(summaryTableRow, 9).Value = ticker
+            ws.Cells(summaryTableRow, 10).Value = yearlyChange
+            ws.Cells(summaryTableRow, 11).Value = percentChange
+            ws.Cells(summaryTableRow, 12).Value = totalVolume
+
+            summaryTableRow = summaryTableRow + 1
+        Next i
+
+        ws.Range("K:K").NumberFormat = "0.00%"
+        ws.Range("L:L").NumberFormat = "0.00%"
+
+        ws.Cells(2, 15).Value = "Greatest % Increase"
+        ws.Cells(3, 15).Value = "Greatest % Decrease"
+        ws.Cells(4, 15).Value = "Greatest Total Volume"
+
+        ws.Cells(1, 16).Value = "Ticker"
+        ws.Cells(1, 17).Value = "Value"
+
+        FindGreatestValues ws, "Percent Change", 2, 16
+        FindGreatestValues ws, "Percent Change", 3, 16, True
+        FindGreatestValues ws, "Total Stock Volume", 4, 16
+
+       
+
+    Next ws
+End Sub
+
+Sub FindGreatestValues(ws As Worksheet, criteria As String, outputRow As Integer, outputColumn As Integer, Optional isDecrease As Boolean = False)
+    Dim lastRow As Long
+    Dim greatestValue As Double
+    Dim ticker As String
+
+    lastRow = ws.Cells(ws.Rows.Count, 9).End(xlUp).Row
+
+    greatestValue = ws.Cells(2, 11).Value
+
+    For i = 2 To lastRow
+        If criteria = "Percent Change" Then
+            If isDecrease Then
+                If ws.Cells(i, 11).Value < greatestValue Then
+                    greatestValue = ws.Cells(i, 11).Value
+                    ticker = ws.Cells(i, 9).Value
+                End If
+            Else
+                If ws.Cells(i, 11).Value > greatestValue Then
+                    greatestValue = ws.Cells(i, 11).Value
+                    ticker = ws.Cells(i, 9).Value
+                End If
+            End If
+        ElseIf criteria = "Total Stock Volume" Then
+            If ws.Cells(i, 12).Value > greatestValue Then
+                greatestValue = ws.Cells(i, 12).Value
+                ticker = ws.Cells(i, 9).Value
+            End If
+        End If
+    Next i
+
+    ws.Cells(outputRow, outputColumn).Value = ticker
+    ws.Cells(outputRow, outputColumn + 1).Value = greatestValue
+End Sub
